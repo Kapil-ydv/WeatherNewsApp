@@ -1,0 +1,562 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather & News Aggregator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                    chart: {
+                        "1": "var(--chart-1)",
+                        "2": "var(--chart-2)",
+                        "3": "var(--chart-3)",
+                        "4": "var(--chart-4)",
+                        "5": "var(--chart-5)",
+                    }
+                },
+                fontFamily: {
+                    sans: ["Inter", "system-ui", "sans-serif"],
+                }
+            },
+        }
+    };
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --radius: 12px;
+            --background: hsl(210 20% 98%);
+            --foreground: hsl(210 10% 13%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(210 10% 13%);
+            --popover: hsl(0 0% 100%);
+            --popover-foreground: hsl(210 10% 13%);
+            --primary: hsl(207 90% 34%);
+            --primary-foreground: hsl(0 0% 100%);
+            --secondary: hsl(45 100% 50%);
+            --secondary-foreground: hsl(210 10% 13%);
+            --muted: hsl(210 20% 95%);
+            --muted-foreground: hsl(210 10% 46%);
+            --accent: hsl(207 100% 92%);
+            --accent-foreground: hsl(207 90% 34%);
+            --destructive: hsl(0 84% 60%);
+            --destructive-foreground: hsl(0 0% 100%);
+            --border: hsl(210 20% 90%);
+            --input: hsl(210 20% 90%);
+            --ring: hsl(207 90% 34%);
+            --chart-1: hsl(207 90% 34%);
+            --chart-2: hsl(45 100% 50%);
+            --chart-3: hsl(120 70% 45%);
+            --chart-4: hsl(280 70% 55%);
+            --chart-5: hsl(15 80% 55%);
+        }
+
+        .dark {
+            --background: hsl(210 20% 8%);
+            --foreground: hsl(210 10% 90%);
+            --card: hsl(210 20% 12%);
+            --card-foreground: hsl(210 10% 90%);
+            --popover: hsl(210 20% 12%);
+            --popover-foreground: hsl(210 10% 90%);
+            --primary: hsl(207 90% 54%);
+            --primary-foreground: hsl(210 20% 8%);
+            --secondary: hsl(45 90% 60%);
+            --secondary-foreground: hsl(210 20% 8%);
+            --muted: hsl(210 20% 15%);
+            --muted-foreground: hsl(210 10% 60%);
+            --accent: hsl(210 20% 15%);
+            --accent-foreground: hsl(207 90% 54%);
+            --destructive: hsl(0 75% 55%);
+            --destructive-foreground: hsl(210 20% 8%);
+            --border: hsl(210 20% 20%);
+            --input: hsl(210 20% 20%);
+            --ring: hsl(207 90% 54%);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .weather-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--chart-3) 100%);
+        }
+
+        .news-card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .tab-active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .forecast-item {
+            min-width: 120px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-padding {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+    <!-- @COMPONENT: App Container -->
+    <div class="max-w-md mx-auto bg-card shadow-xl min-h-screen relative">
+        
+        <!-- @COMPONENT: Header -->
+        <header class="bg-primary text-primary-foreground p-4 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-cloud-sun text-xl"></i>
+                <h1 class="text-lg font-semibold">WeatherNews</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors" data-event="click:toggleDarkMode">
+                    <i class="fas fa-moon text-sm"></i>
+                </button>
+                <button class="p-2 rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors" data-event="click:openSettings">
+                    <i class="fas fa-cog text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- @COMPONENT: Location Banner -->
+        <div class="bg-accent text-accent-foreground p-3 flex items-center justify-center space-x-2 border-b border-border">
+            <i class="fas fa-location-dot text-sm"></i>
+            <span class="text-sm font-medium" data-bind="location.city">San Francisco, CA</span>
+            <button class="text-xs underline" data-event="click:changeLocation">Change</button>
+        </div>
+
+        <!-- @COMPONENT: Main Content Container -->
+        <div class="pb-20"> <!-- Bottom padding for tab bar -->
+            
+            <!-- @COMPONENT: Current Weather Section -->
+            <div class="weather-gradient text-primary-foreground p-6 m-4 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold" data-bind="weather.temperature">72°F</h2>
+                        <p class="text-primary-foreground/80 text-sm" data-bind="weather.condition">Partly Cloudy</p>
+                        <p class="text-primary-foreground/60 text-xs mt-1" data-bind="weather.lastUpdated">Updated 5 min ago</p>
+                    </div>
+                    <div class="text-right">
+                        <!-- Weather icon representing partly cloudy conditions -->
+                        <i class="fas fa-cloud-sun text-4xl mb-2"></i>
+                        <div class="text-xs text-primary-foreground/80">
+                            <div>Feels like <span data-bind="weather.feelsLike">75°F</span></div>
+                            <div>Humidity <span data-bind="weather.humidity">65%</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- @COMPONENT: Weather Details Grid -->
+                <div class="grid grid-cols-3 gap-3 pt-3 border-t border-primary-foreground/20">
+                    <div class="text-center">
+                        <i class="fas fa-wind text-lg mb-1"></i>
+                        <p class="text-xs text-primary-foreground/80">Wind</p>
+                        <p class="text-sm font-semibold" data-bind="weather.wind">8 mph</p>
+                    </div>
+                    <div class="text-center">
+                        <i class="fas fa-eye text-lg mb-1"></i>
+                        <p class="text-xs text-primary-foreground/80">Visibility</p>
+                        <p class="text-sm font-semibold" data-bind="weather.visibility">10 mi</p>
+                    </div>
+                    <div class="text-center">
+                        <i class="fas fa-thermometer-half text-lg mb-1"></i>
+                        <p class="text-xs text-primary-foreground/80">UV Index</p>
+                        <p class="text-sm font-semibold" data-bind="weather.uvIndex">3</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- @COMPONENT: 5-Day Forecast -->
+            <div class="mx-4 mb-6">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <i class="fas fa-calendar-days mr-2 text-primary"></i>
+                    5-Day Forecast
+                </h3>
+                <div class="flex space-x-3 overflow-x-auto pb-2">
+                    <!-- @MAP: forecast.map(day => ( -->
+                    <div class="forecast-item bg-card border border-border rounded-lg p-3 text-center shadow-sm">
+                        <p class="text-xs text-muted-foreground mb-1" data-bind="day.name">Today</p>
+                        <i class="fas fa-sun text-secondary text-lg mb-2"></i>
+                        <p class="text-sm font-semibold" data-bind="day.high">75°</p>
+                        <p class="text-xs text-muted-foreground" data-bind="day.low">58°</p>
+                    </div>
+                    <div class="forecast-item bg-card border border-border rounded-lg p-3 text-center shadow-sm">
+                        <p class="text-xs text-muted-foreground mb-1">Mon</p>
+                        <i class="fas fa-cloud-rain text-blue-500 text-lg mb-2"></i>
+                        <p class="text-sm font-semibold">68°</p>
+                        <p class="text-xs text-muted-foreground">52°</p>
+                    </div>
+                    <div class="forecast-item bg-card border border-border rounded-lg p-3 text-center shadow-sm">
+                        <p class="text-xs text-muted-foreground mb-1">Tue</p>
+                        <i class="fas fa-cloud text-gray-500 text-lg mb-2"></i>
+                        <p class="text-sm font-semibold">71°</p>
+                        <p class="text-xs text-muted-foreground">55°</p>
+                    </div>
+                    <div class="forecast-item bg-card border border-border rounded-lg p-3 text-center shadow-sm">
+                        <p class="text-xs text-muted-foreground mb-1">Wed</p>
+                        <i class="fas fa-sun text-secondary text-lg mb-2"></i>
+                        <p class="text-sm font-semibold">78°</p>
+                        <p class="text-xs text-muted-foreground">61°</p>
+                    </div>
+                    <div class="forecast-item bg-card border border-border rounded-lg p-3 text-center shadow-sm">
+                        <p class="text-xs text-muted-foreground mb-1">Thu</p>
+                        <i class="fas fa-cloud-sun text-primary text-lg mb-2"></i>
+                        <p class="text-sm font-semibold">73°</p>
+                        <p class="text-xs text-muted-foreground">59°</p>
+                    </div>
+                    <!-- @END_MAP )) -->
+                </div>
+            </div>
+
+            <!-- @COMPONENT: Weather-Based News Filter Info -->
+            <div class="mx-4 mb-4 p-3 bg-accent text-accent-foreground rounded-lg border border-border">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-filter text-sm"></i>
+                    <span class="text-sm font-medium">News Filter Active:</span>
+                    <span class="text-sm" data-bind="newsFilter.reason">Cool weather - Showing positive news</span>
+                </div>
+            </div>
+
+            <!-- @COMPONENT: News Headlines Section -->
+            <div class="mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center">
+                        <i class="fas fa-newspaper mr-2 text-primary"></i>
+                        Latest Headlines
+                    </h3>
+                    <button class="text-sm text-primary hover:underline" data-event="click:refreshNews">
+                        <i class="fas fa-refresh mr-1"></i>Refresh
+                    </button>
+                </div>
+
+                <!-- @MAP: newsArticles.map(article => ( -->
+                <article class="news-card bg-card border border-border rounded-lg p-4 mb-3 shadow-sm cursor-pointer" data-event="click:openArticle" data-mock="true">
+                    <div class="flex space-x-3">
+                        <!-- Thumbnail of a breaking news scene with reporters -->
+                        <img src="https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=80" alt="News thumbnail" class="w-20 h-16 rounded-md object-cover flex-shrink-0" data-mock-image="true" />
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-sm leading-5 mb-1" data-bind="article.title">Local Community Celebrates New Park Opening with Record Attendance</h4>
+                            <p class="text-xs text-muted-foreground mb-2 line-clamp-2" data-bind="article.description">Hundreds of families gathered yesterday to celebrate the grand opening of Riverside Community Park, featuring new playgrounds and green spaces...</p>
+                            <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                <span data-bind="article.source">Community News</span>
+                                <span data-bind="article.time">2h ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="news-card bg-card border border-border rounded-lg p-4 mb-3 shadow-sm cursor-pointer" data-event="click:openArticle" data-mock="true">
+                    <div class="flex space-x-3">
+                        <!-- Thumbnail of people celebrating with raised hands -->
+                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=80" alt="Celebration thumbnail" class="w-20 h-16 rounded-md object-cover flex-shrink-0" data-mock-image="true" />
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-sm leading-5 mb-1" data-bind="article.title">Tech Startup Achieves Major Breakthrough in Clean Energy</h4>
+                            <p class="text-xs text-muted-foreground mb-2 line-clamp-2" data-bind="article.description">Innovation in renewable energy technology promises to reduce costs by 40% while increasing efficiency, marking a significant win for environmental efforts...</p>
+                            <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                <span data-bind="article.source">Tech Daily</span>
+                                <span data-bind="article.time">4h ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="news-card bg-card border border-border rounded-lg p-4 mb-3 shadow-sm cursor-pointer" data-event="click:openArticle" data-mock="true">
+                    <div class="flex space-x-3">
+                        <!-- Thumbnail of students graduating and throwing caps -->
+                        <img src="https://pixabay.com/get/g7eafcc3fb80bca090b179003ce6f78b95a07a01e21e3600ab1e57969a8a9b47a1d4b6adad963fb6d543c4b9280ed2ef9cf03bb84f6da87f3907a7028df483d99_1280.jpg" alt="Graduation celebration" class="w-20 h-16 rounded-md object-cover flex-shrink-0" data-mock-image="true" />
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-sm leading-5 mb-1" data-bind="article.title">Record Number of Students Receive Scholarships This Year</h4>
+                            <p class="text-xs text-muted-foreground mb-2 line-clamp-2" data-bind="article.description">Educational institutions report highest scholarship distribution in history, with over 10,000 students receiving financial support for their studies...</p>
+                            <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                <span data-bind="article.source">Education Times</span>
+                                <span data-bind="article.time">6h ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="news-card bg-card border border-border rounded-lg p-4 mb-3 shadow-sm cursor-pointer" data-event="click:openArticle" data-mock="true">
+                    <div class="flex space-x-3">
+                        <!-- Thumbnail of medical professionals in a positive healthcare setting -->
+                        <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=80" alt="Healthcare workers" class="w-20 h-16 rounded-md object-cover flex-shrink-0" data-mock-image="true" />
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-sm leading-5 mb-1" data-bind="article.title">Medical Breakthrough Offers Hope for Rare Disease Treatment</h4>
+                            <p class="text-xs text-muted-foreground mb-2 line-clamp-2" data-bind="article.description">Research team announces successful trials for new treatment method, bringing hope to thousands of patients worldwide with rare genetic conditions...</p>
+                            <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                <span data-bind="article.source">Medical Journal</span>
+                                <span data-bind="article.time">8h ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                <!-- @END_MAP )) -->
+
+                <!-- Load More Button -->
+                <button class="w-full p-3 bg-muted text-muted-foreground rounded-lg text-sm font-medium hover:bg-muted/80 transition-colors" data-event="click:loadMoreNews">
+                    <i class="fas fa-chevron-down mr-1"></i>
+                    Load More Articles
+                </button>
+            </div>
+        </div>
+
+        <!-- @COMPONENT: Bottom Navigation -->
+        <nav class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-card border-t border-border">
+            <div class="flex">
+                <button class="flex-1 p-4 text-center tab-active" data-event="click:switchTab" data-tab="home">
+                    <i class="fas fa-home text-lg mb-1 block"></i>
+                    <span class="text-xs">Home</span>
+                </button>
+                <button class="flex-1 p-4 text-center text-muted-foreground hover:text-foreground transition-colors" data-event="click:switchTab" data-tab="forecast">
+                    <i class="fas fa-cloud-sun text-lg mb-1 block"></i>
+                    <span class="text-xs">Forecast</span>
+                </button>
+                <button class="flex-1 p-4 text-center text-muted-foreground hover:text-foreground transition-colors" data-event="click:switchTab" data-tab="news">
+                    <i class="fas fa-newspaper text-lg mb-1 block"></i>
+                    <span class="text-xs">News</span>
+                </button>
+                <button class="flex-1 p-4 text-center text-muted-foreground hover:text-foreground transition-colors" data-event="click:switchTab" data-tab="settings">
+                    <i class="fas fa-cog text-lg mb-1 block"></i>
+                    <span class="text-xs">Settings</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- @COMPONENT: Settings Screen (Hidden by default) -->
+        <div id="settingsScreen" class="fixed inset-0 bg-background z-50 hidden">
+            <div class="max-w-md mx-auto h-full">
+                <!-- Settings Header -->
+                <header class="bg-primary text-primary-foreground p-4 flex items-center">
+                    <button class="mr-4" data-event="click:closeSettings">
+                        <i class="fas fa-arrow-left text-lg"></i>
+                    </button>
+                    <h1 class="text-lg font-semibold">Settings</h1>
+                </header>
+
+                <!-- Settings Content -->
+                <div class="p-4 space-y-6">
+                    <!-- Temperature Units -->
+                    <div class="bg-card rounded-lg p-4 border border-border">
+                        <h3 class="font-semibold mb-3 flex items-center">
+                            <i class="fas fa-thermometer-half mr-2 text-primary"></i>
+                            Temperature Units
+                        </h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-3">
+                                <input type="radio" name="tempUnit" value="fahrenheit" checked class="text-primary" data-bind="settings.tempUnit">
+                                <span>Fahrenheit (°F)</span>
+                            </label>
+                            <label class="flex items-center space-x-3">
+                                <input type="radio" name="tempUnit" value="celsius" class="text-primary" data-bind="settings.tempUnit">
+                                <span>Celsius (°C)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- News Categories -->
+                    <div class="bg-card rounded-lg p-4 border border-border">
+                        <h3 class="font-semibold mb-3 flex items-center">
+                            <i class="fas fa-tags mr-2 text-primary"></i>
+                            News Categories
+                        </h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between">
+                                <span>General</span>
+                                <input type="checkbox" checked class="rounded" data-bind="settings.newsCategories.general">
+                            </label>
+                            <label class="flex items-center justify-between">
+                                <span>Technology</span>
+                                <input type="checkbox" checked class="rounded" data-bind="settings.newsCategories.technology">
+                            </label>
+                            <label class="flex items-center justify-between">
+                                <span>Health</span>
+                                <input type="checkbox" class="rounded" data-bind="settings.newsCategories.health">
+                            </label>
+                            <label class="flex items-center justify-between">
+                                <span>Sports</span>
+                                <input type="checkbox" class="rounded" data-bind="settings.newsCategories.sports">
+                            </label>
+                            <label class="flex items-center justify-between">
+                                <span>Entertainment</span>
+                                <input type="checkbox" class="rounded" data-bind="settings.newsCategories.entertainment">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Weather-based Filtering -->
+                    <div class="bg-card rounded-lg p-4 border border-border">
+                        <h3 class="font-semibold mb-3 flex items-center">
+                            <i class="fas fa-filter mr-2 text-primary"></i>
+                            Weather-Based News Filtering
+                        </h3>
+                        <label class="flex items-center justify-between">
+                            <div>
+                                <span class="block">Enable Smart Filtering</span>
+                                <span class="text-xs text-muted-foreground">Filter news based on current weather</span>
+                            </div>
+                            <input type="checkbox" checked class="rounded" data-bind="settings.weatherFiltering">
+                        </label>
+                    </div>
+
+                    <!-- Location Settings -->
+                    <div class="bg-card rounded-lg p-4 border border-border">
+                        <h3 class="font-semibold mb-3 flex items-center">
+                            <i class="fas fa-location-dot mr-2 text-primary"></i>
+                            Location
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span>Use Current Location</span>
+                                <input type="checkbox" checked class="rounded" data-bind="settings.useCurrentLocation">
+                            </div>
+                            <button class="w-full p-2 bg-muted text-muted-foreground rounded text-sm" data-event="click:changeLocation">
+                                Change Location
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="bg-card rounded-lg p-4 border border-border">
+                        <h3 class="font-semibold mb-3 flex items-center">
+                            <i class="fas fa-bell mr-2 text-primary"></i>
+                            Notifications
+                        </h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between">
+                                <span>Weather Alerts</span>
+                                <input type="checkbox" checked class="rounded" data-bind="settings.notifications.weather">
+                            </label>
+                            <label class="flex items-center justify-between">
+                                <span>Breaking News</span>
+                                <input type="checkbox" class="rounded" data-bind="settings.notifications.news">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- About Section -->
+                    <div class="bg-card rounded-lg p-4 border border-border">
+                        <h3 class="font-semibold mb-3 flex items-center">
+                            <i class="fas fa-info-circle mr-2 text-primary"></i>
+                            About
+                        </h3>
+                        <div class="space-y-2 text-sm text-muted-foreground">
+                            <p>Version 1.0.0</p>
+                            <p>Weather data from OpenWeatherMap</p>
+                            <p>News from NewsAPI</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- @COMPONENT: Loading State Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 hidden flex items-center justify-center">
+            <div class="bg-card p-6 rounded-lg shadow-lg text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                <p class="text-sm text-muted-foreground">Loading weather data...</p>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: App Container -->
+
+    <script>
+        // TODO: Implement React Native state management, API integration, and navigation logic
+        
+        (function() {
+            // Mock tab switching functionality for demonstration
+            const tabButtons = document.querySelectorAll('[data-tab]');
+            const settingsScreen = document.getElementById('settingsScreen');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabButtons.forEach(tab => {
+                        tab.classList.remove('tab-active');
+                        tab.classList.add('text-muted-foreground', 'hover:text-foreground');
+                    });
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('tab-active');
+                    this.classList.remove('text-muted-foreground', 'hover:text-foreground');
+                    
+                    if (this.dataset.tab === 'settings') {
+                        settingsScreen.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Settings screen navigation
+            document.querySelector('[data-event="click:closeSettings"]').addEventListener('click', function() {
+                settingsScreen.classList.add('hidden');
+                // Reset home tab as active
+                tabButtons[0].click();
+            });
+
+            document.querySelector('[data-event="click:openSettings"]').addEventListener('click', function() {
+                settingsScreen.classList.remove('hidden');
+            });
+
+            // Mock refresh functionality
+            document.querySelector('[data-event="click:refreshNews"]').addEventListener('click', function() {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                }, 1500);
+            });
+
+            // Mock dark mode toggle
+            document.querySelector('[data-event="click:toggleDarkMode"]').addEventListener('click', function() {
+                document.documentElement.classList.toggle('dark');
+            });
+        })();
+    </script>
+</body>
+</html>
